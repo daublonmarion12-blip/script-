@@ -1,3 +1,6 @@
+-- Commande de chargement (Loading Stream)
+-- loadstring(game:HttpGet("https://raw.githubusercontent.com/daublonmarion12-blip/script-/main/MM2"))()
+
 local Fluent = loadstring(game:HttpGet("https://github.com/dawid-scripts/Fluent/releases/latest/download/main.lua"))()
 
 local Window = Fluent:CreateWindow({
