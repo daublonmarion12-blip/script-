@@ -23,7 +23,7 @@ local lp = game.Players.LocalPlayer
 local UIS = game:GetService("UserInputService")
 local TS = game:GetService("TweenService")
 
--- ANTI-AFK (Empêche la déconnexion après 20 min)
+-- ANTI-AFK
 local VirtualUser = game:GetService("VirtualUser")
 lp.Idled:Connect(function()
     VirtualUser:CaptureController()
@@ -35,39 +35,26 @@ local EspToggle = Tabs.Main:AddToggle("RoleESP", {Title = "ESP Wallhack", Defaul
 
 local function CreateESP(player)
     if player == lp then return end
-    
     local function apply()
         local char = player.Character or player.CharacterAdded:Wait()
         local hrp = char:WaitForChild("HumanoidRootPart", 10)
-        
-        -- Nettoyage si un ancien ESP existe
         if hrp:FindFirstChild("ESP_Fix") then hrp.ESP_Fix:Destroy() end
-        
         local b = Instance.new("BillboardGui", hrp)
         b.Name = "ESP_Fix"
         b.AlwaysOnTop = true
         b.Size = UDim2.new(4, 0, 5.5, 0)
-        
         local f = Instance.new("Frame", b)
         f.Size = UDim2.new(1, 0, 1, 0)
         f.BackgroundTransparency = 0.5
         f.BorderSizePixel = 0
-        
         task.spawn(function()
             while b and b.Parent do
                 if not EspToggle.Value then b:Destroy() break end
-                
-                -- Détection des rôles par inventaire
                 local hasKnife = player.Backpack:FindFirstChild("Knife") or char:FindFirstChild("Knife")
                 local hasGun = player.Backpack:FindFirstChild("Gun") or char:FindFirstChild("Gun")
-                
-                if hasKnife then 
-                    f.BackgroundColor3 = Color3.fromRGB(255, 0, 0) -- Rouge (Tueur)
-                elseif hasGun then 
-                    f.BackgroundColor3 = Color3.fromRGB(0, 0, 255) -- Bleu (Sheriff)
-                else 
-                    f.BackgroundColor3 = Color3.fromRGB(0, 255, 0) -- Vert (Innocent)
-                end
+                if hasKnife then f.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
+                elseif hasGun then f.BackgroundColor3 = Color3.fromRGB(0, 0, 255)
+                else f.BackgroundColor3 = Color3.fromRGB(0, 255, 0) end
                 task.wait(0.5)
             end
         end)
@@ -78,9 +65,7 @@ end
 
 EspToggle:OnChanged(function()
     if EspToggle.Value then
-        for _, p in pairs(game.Players:GetPlayers()) do
-            CreateESP(p)
-        end
+        for _, p in pairs(game.Players:GetPlayers()) do CreateESP(p) end
     end
 end)
 
@@ -95,44 +80,35 @@ task.spawn(function()
             local root = lp.Character.HumanoidRootPart
             local cam = workspace.CurrentCamera.CFrame
             local dir = Vector3.new(0,0,0)
-            
-            -- NoClip pendant le vol
             for _, p in pairs(lp.Character:GetDescendants()) do 
                 if p:IsA("BasePart") then p.CanCollide = false end 
             end
-            
             if UIS:IsKeyDown(Enum.KeyCode.W) then dir = dir + cam.LookVector end
             if UIS:IsKeyDown(Enum.KeyCode.S) then dir = dir - cam.LookVector end
-            if UIS:IsKeyDown(Enum.KeyCode.A) then dir = dir - cam.RightVector end -- TOUCHE A GAUCHE
+            if UIS:IsKeyDown(Enum.KeyCode.A) then dir = dir - cam.RightVector end
             if UIS:IsKeyDown(Enum.KeyCode.D) then dir = dir + cam.RightVector end
             if UIS:IsKeyDown(Enum.KeyCode.Space) then dir = dir + Vector3.new(0,1,0) end
             if UIS:IsKeyDown(Enum.KeyCode.LeftShift) then dir = dir - Vector3.new(0,1,0) end
-            
             root.Velocity = dir * 75
-            
             local bg = root:FindFirstChild("FlyGyro") or Instance.new("BodyGyro", root)
-            bg.Name = "FlyGyro"
             bg.maxTorque = Vector3.new(9e9,9e9,9e9)
             bg.cframe = cam
-        else
-            if lp.Character and lp.Character:FindFirstChild("HumanoidRootPart") then
-                if lp.Character.HumanoidRootPart:FindFirstChild("FlyGyro") then
-                    lp.Character.HumanoidRootPart.FlyGyro:Destroy()
-                end
+        elseif lp.Character and lp.Character:FindFirstChild("HumanoidRootPart") then
+            if lp.Character.HumanoidRootPart:FindFirstChild("FlyGyro") then
+                lp.Character.HumanoidRootPart.FlyGyro:Destroy()
             end
         end
     end
 end)
 FlyToggle:OnChanged(function() Flying = FlyToggle.Value end)
 
--- 3. COIN FARM (GLISSADE)
+-- 3. COIN FARM
 local FarmToggle = Tabs.Farm:AddToggle("AutoFarm", {Title = "Activer Coin Farm", Default = false})
-
 task.spawn(function()
     while true do
         task.wait(0.5)
         if FarmToggle.Value and lp.Character and lp.Character:FindFirstChild("HumanoidRootPart") then
-            local container = workspace:FindFirstChild("Normal") -- Dossier classique des maps MM2
+            local container = workspace:FindFirstChild("Normal")
             if container then
                 for _, v in pairs(container:GetDescendants()) do
                     if not FarmToggle.Value then break end
@@ -142,7 +118,7 @@ task.spawn(function()
                             local t = TS:Create(lp.Character.HumanoidRootPart, TweenInfo.new(dist/25, Enum.EasingStyle.Linear), {CFrame = v.CFrame})
                             t:Play()
                             t.Completed:Wait()
-                            task.wait(0.1) -- Petit délai pour bien collecter
+                            task.wait(0.1)
                         end
                     end
                 end
@@ -151,9 +127,4 @@ task.spawn(function()
     end
 end)
 
--- Notification de chargement
-Fluent:Notify({
-    Title = "XENO FIX",
-    Content = "Script chargé avec succès !",
-    Duration = 5
-})
+Fluent:Notify({Title = "XENO FIX", Content = "Script chargé !", Duration = 5})
