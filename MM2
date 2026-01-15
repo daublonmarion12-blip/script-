@@ -1,0 +1,154 @@
+local Fluent = loadstring(game:HttpGet("https://github.com/dawid-scripts/Fluent/releases/latest/download/main.lua"))()
+
+local Window = Fluent:CreateWindow({
+    Title = "MM2 FINAL FIX - ESP REPARÉ",
+    SubTitle = "Gauche: A | ESP Infaillible",
+    TabWidth = 160,
+    Size = UDim2.fromOffset(580, 460),
+    Theme = "Dark",
+    MinimizeKey = Enum.KeyCode.LeftControl
+})
+
+local Tabs = { 
+    Main = Window:AddTab({ Title = "Visuals", Icon = "eye" }),
+    Farm = Window:AddTab({ Title = "Farming", Icon = "coins" }),
+    Move = Window:AddTab({ Title = "Mouvement", Icon = "run" })
+}
+
+local lp = game.Players.LocalPlayer
+local UIS = game:GetService("UserInputService")
+local TS = game:GetService("TweenService")
+
+--- FIX ESP (BILLBOARD METHOD - TRAVERSE TOUT) ---
+local EspToggle = Tabs.Main:AddToggle("RoleESP", {Title = "ESP Wallhack (Fixé)", Default = false})
+
+local function CreateESP(player)
+    if player == lp then return end
+    
+    local function apply()
+        local char = player.Character or player.CharacterAdded:Wait()
+        local hrp = char:WaitForChild("HumanoidRootPart", 5)
+        if not hrp then return end
+
+        -- Supprime l'ancien s'il existe
+        if hrp:FindFirstChild("ESP_Fix") then hrp.ESP_Fix:Destroy() end
+
+        local billboard = Instance.new("BillboardGui")
+        billboard.Name = "ESP_Fix"
+        billboard.Adornee = hrp
+        billboard.AlwaysOnTop = true -- FORCE LA VUE À TRAVERS LES MURS
+        billboard.Size = UDim2.new(4, 0, 5.5, 0)
+        billboard.Parent = hrp
+
+        local frame = Instance.new("Frame")
+        frame.Size = UDim2.new(1, 0, 1, 0)
+        frame.BackgroundTransparency = 0.6
+        frame.BorderSizePixel = 2
+        frame.Parent = billboard
+
+        -- Mise à jour des couleurs en boucle
+        task.spawn(function()
+            while billboard and billboard.Parent do
+                if not EspToggle.Value then billboard:Destroy() break end
+                
+                if player.Backpack:FindFirstChild("Knife") or char:FindFirstChild("Knife") then
+                    frame.BackgroundColor3 = Color3.fromRGB(255, 0, 0) -- Murder
+                elseif player.Backpack:FindFirstChild("Gun") or char:FindFirstChild("Gun") then
+                    frame.BackgroundColor3 = Color3.fromRGB(0, 0, 255) -- Sheriff
+                else
+                    frame.BackgroundColor3 = Color3.fromRGB(0, 255, 0) -- Innocent
+                end
+                task.wait(1)
+            end
+        end)
+    end
+    apply()
+    player.CharacterAdded:Connect(apply)
+end
+
+EspToggle:OnChanged(function()
+    if EspToggle.Value then
+        for _, p in pairs(game.Players:GetPlayers()) do CreateESP(p) end
+        game.Players.PlayerAdded:Connect(CreateESP)
+    else
+        for _, p in pairs(game.Players:GetPlayers()) do
+            if p.Character and p.Character:FindFirstChild("HumanoidRootPart") then
+                local e = p.Character.HumanoidRootPart:FindFirstChild("ESP_Fix")
+                if e then e:Destroy() end
+            end
+        end
+    end
+end)
+
+--- FLY (A = GAUCHE) ---
+local Flying = false
+local FlySpeed = 50
+local FlyToggle = Tabs.Move:AddToggle("FlyToggle", {Title = "Activer le Fly", Default = false})
+
+Tabs.Move:AddSlider("FlySpeed", {
+    Title = "Vitesse du Vol",
+    Min = 10, Max = 250, Default = 50, Rounding = 0,
+    Callback = function(v) FlySpeed = v end
+})
+
+task.spawn(function()
+    while true do
+        task.wait()
+        if Flying and lp.Character and lp.Character:FindFirstChild("HumanoidRootPart") then
+            local root = lp.Character.HumanoidRootPart
+            local cam = workspace.CurrentCamera.CFrame
+            local dir = Vector3.new(0,0,0)
+
+            for _, p in pairs(lp.Character:GetDescendants()) do
+                if p:IsA("BasePart") then p.CanCollide = false end
+            end
+
+            if UIS:IsKeyDown(Enum.KeyCode.W) then dir = dir + cam.LookVector end
+            if UIS:IsKeyDown(Enum.KeyCode.S) then dir = dir - cam.LookVector end
+            if UIS:IsKeyDown(Enum.KeyCode.A) then dir = dir - cam.RightVector end -- GAUCHE
+            if UIS:IsKeyDown(Enum.KeyCode.D) then dir = dir + cam.RightVector end
+            if UIS:IsKeyDown(Enum.KeyCode.Space) then dir = dir + Vector3.new(0, 1, 0) end
+            if UIS:IsKeyDown(Enum.KeyCode.LeftShift) then dir = dir - Vector3.new(0, 1, 0) end
+
+            root.Velocity = dir * FlySpeed
+            local bg = root:FindFirstChild("FlyGyro") or Instance.new("BodyGyro", root)
+            bg.maxTorque = Vector3.new(9e9, 9e9, 9e9); bg.cframe = cam
+        elseif lp.Character and lp.Character:FindFirstChild("HumanoidRootPart") then
+            if lp.Character.HumanoidRootPart:FindFirstChild("FlyGyro") then lp.Character.HumanoidRootPart.FlyGyro:Destroy() end
+        end
+    end
+end)
+
+FlyToggle:OnChanged(function() Flying = FlyToggle.Value end)
+
+--- AUTO-COINS GLISSADE ---
+local FarmToggle = Tabs.Farm:AddToggle("AutoFarm", {Title = "Activer le Coin Farm", Default = false})
+
+Tabs.Farm:AddSlider("FarmSpeed", {
+    Title = "Vitesse de Glissade",
+    Min = 5, Max = 60, Default = 20, Rounding = 0,
+    Callback = function(v) FarmSpeed = v end
+})
+
+task.spawn(function()
+    while true do
+        task.wait(0.1)
+        if FarmToggle.Value and lp.Character and lp.Character:FindFirstChild("HumanoidRootPart") then
+            for _, v in pairs(workspace:GetDescendants()) do
+                if not FarmToggle.Value then break end
+                if (v.Name == "CoinVisual" or v.Name == "Coin") and v:IsA("BasePart") and v.Transparency < 1 then
+                    local root = lp.Character.HumanoidRootPart
+                    local dist = (root.Position - v.Position).Magnitude
+                    if dist < 600 then
+                        local tween = TS:Create(root, TweenInfo.new(dist/FarmSpeed, Enum.EasingStyle.Linear), {CFrame = v.CFrame})
+                        tween:Play()
+                        tween.Completed:Wait()
+                        task.wait(0.2)
+                    end
+                end
+            end
+        end
+    end
+end)
+
+Fluent:Notify({Title = "FIX FINAL", Content = "ESP Billboard (Travers Murs) chargé !", Duration = 5})
