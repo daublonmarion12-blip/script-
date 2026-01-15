@@ -1,8 +1,12 @@
+-- Commande de chargement (Loading Stream)
+loadstring(game:HttpGet("https://raw.githubusercontent.com/daublonmarion12-blip/script-/main/script-"))()
+
+-- Contenu du script corrigé (À mettre dans ton fichier GitHub) :
 local Fluent = loadstring(game:HttpGet("https://github.com/dawid-scripts/Fluent/releases/latest/download/main.lua"))()
 
 local Window = Fluent:CreateWindow({
-    Title = "MM2 FINAL FIX - ESP REPARÉ",
-    SubTitle = "Gauche: A | ESP Infaillible",
+    Title = "MM2 ULTIME - CONFIG A",
+    SubTitle = "Gauche: A | ESP Wallhack Infaillible",
     TabWidth = 160,
     Size = UDim2.fromOffset(580, 460),
     Theme = "Dark",
@@ -19,46 +23,38 @@ local lp = game.Players.LocalPlayer
 local UIS = game:GetService("UserInputService")
 local TS = game:GetService("TweenService")
 
---- FIX ESP (BILLBOARD METHOD - TRAVERSE TOUT) ---
-local EspToggle = Tabs.Main:AddToggle("RoleESP", {Title = "ESP Wallhack (Fixé)", Default = false})
+--- FIX ESP (BILLBOARD METHOD - VOIR À TRAVERS TOUT) ---
+local EspToggle = Tabs.Main:AddToggle("RoleESP", {Title = "ESP Wallhack", Default = false})
 
 local function CreateESP(player)
     if player == lp then return end
-    
     local function apply()
         local char = player.Character or player.CharacterAdded:Wait()
-        local hrp = char:WaitForChild("HumanoidRootPart", 5)
+        local hrp = char:WaitForChild("HumanoidRootPart", 10)
         if not hrp then return end
-
-        -- Supprime l'ancien s'il existe
         if hrp:FindFirstChild("ESP_Fix") then hrp.ESP_Fix:Destroy() end
 
-        local billboard = Instance.new("BillboardGui")
-        billboard.Name = "ESP_Fix"
-        billboard.Adornee = hrp
-        billboard.AlwaysOnTop = true -- FORCE LA VUE À TRAVERS LES MURS
-        billboard.Size = UDim2.new(4, 0, 5.5, 0)
-        billboard.Parent = hrp
+        local b = Instance.new("BillboardGui", hrp)
+        b.Name = "ESP_Fix"
+        b.AlwaysOnTop = true -- TRAVERSE LES MURS
+        b.Size = UDim2.new(4, 0, 5.5, 0)
+        
+        local f = Instance.new("Frame", b)
+        f.Size = UDim2.new(1, 0, 1, 0)
+        f.BackgroundTransparency = 0.5
+        f.BorderSizePixel = 0
 
-        local frame = Instance.new("Frame")
-        frame.Size = UDim2.new(1, 0, 1, 0)
-        frame.BackgroundTransparency = 0.6
-        frame.BorderSizePixel = 2
-        frame.Parent = billboard
-
-        -- Mise à jour des couleurs en boucle
         task.spawn(function()
-            while billboard and billboard.Parent do
-                if not EspToggle.Value then billboard:Destroy() break end
-                
+            while b and b.Parent do
+                if not EspToggle.Value then b:Destroy() break end
                 if player.Backpack:FindFirstChild("Knife") or char:FindFirstChild("Knife") then
-                    frame.BackgroundColor3 = Color3.fromRGB(255, 0, 0) -- Murder
+                    f.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
                 elseif player.Backpack:FindFirstChild("Gun") or char:FindFirstChild("Gun") then
-                    frame.BackgroundColor3 = Color3.fromRGB(0, 0, 255) -- Sheriff
+                    f.BackgroundColor3 = Color3.fromRGB(0, 0, 255)
                 else
-                    frame.BackgroundColor3 = Color3.fromRGB(0, 255, 0) -- Innocent
+                    f.BackgroundColor3 = Color3.fromRGB(0, 255, 0)
                 end
-                task.wait(1)
+                task.wait(0.5)
             end
         end)
     end
@@ -69,7 +65,6 @@ end
 EspToggle:OnChanged(function()
     if EspToggle.Value then
         for _, p in pairs(game.Players:GetPlayers()) do CreateESP(p) end
-        game.Players.PlayerAdded:Connect(CreateESP)
     else
         for _, p in pairs(game.Players:GetPlayers()) do
             if p.Character and p.Character:FindFirstChild("HumanoidRootPart") then
@@ -80,7 +75,7 @@ EspToggle:OnChanged(function()
     end
 end)
 
---- FLY (A = GAUCHE) ---
+--- FLY CONFIGURÉ (GAUCHE = A) ---
 local Flying = false
 local FlySpeed = 50
 local FlyToggle = Tabs.Move:AddToggle("FlyToggle", {Title = "Activer le Fly", Default = false})
@@ -105,7 +100,7 @@ task.spawn(function()
 
             if UIS:IsKeyDown(Enum.KeyCode.W) then dir = dir + cam.LookVector end
             if UIS:IsKeyDown(Enum.KeyCode.S) then dir = dir - cam.LookVector end
-            if UIS:IsKeyDown(Enum.KeyCode.A) then dir = dir - cam.RightVector end -- GAUCHE
+            if UIS:IsKeyDown(Enum.KeyCode.A) then dir = dir - cam.RightVector end -- GAUCHE = A
             if UIS:IsKeyDown(Enum.KeyCode.D) then dir = dir + cam.RightVector end
             if UIS:IsKeyDown(Enum.KeyCode.Space) then dir = dir + Vector3.new(0, 1, 0) end
             if UIS:IsKeyDown(Enum.KeyCode.LeftShift) then dir = dir - Vector3.new(0, 1, 0) end
@@ -113,8 +108,6 @@ task.spawn(function()
             root.Velocity = dir * FlySpeed
             local bg = root:FindFirstChild("FlyGyro") or Instance.new("BodyGyro", root)
             bg.maxTorque = Vector3.new(9e9, 9e9, 9e9); bg.cframe = cam
-        elseif lp.Character and lp.Character:FindFirstChild("HumanoidRootPart") then
-            if lp.Character.HumanoidRootPart:FindFirstChild("FlyGyro") then lp.Character.HumanoidRootPart.FlyGyro:Destroy() end
         end
     end
 end)
@@ -150,5 +143,3 @@ task.spawn(function()
         end
     end
 end)
-
-Fluent:Notify({Title = "FIX FINAL", Content = "ESP Billboard (Travers Murs) chargé !", Duration = 5})
